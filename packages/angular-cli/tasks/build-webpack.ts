@@ -31,7 +31,8 @@ export default <any>Task.extend({
       runTaskOptions.sourcemap,
       runTaskOptions.vendorChunk,
       runTaskOptions.verbose,
-      runTaskOptions.progress
+      runTaskOptions.progress,
+      runTaskOptions.disableCacheBust
     ).config;
 
     const webpackCompiler: any = webpack(config);
