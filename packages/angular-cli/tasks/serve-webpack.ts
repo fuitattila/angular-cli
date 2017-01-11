@@ -32,7 +32,10 @@ export default Task.extend({
       serveTaskOptions.sourcemap,
       serveTaskOptions.vendorChunk,
       serveTaskOptions.verbose,
-      serveTaskOptions.progress
+      serveTaskOptions.progress,
+      undefined,
+      undefined,
+      serveTaskOptions.extractCss
     ).config;
 
     // This allows for live reload of page when changes are made to repo.

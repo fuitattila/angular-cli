@@ -32,7 +32,8 @@ export class NgCliWebpackConfig {
     vendorChunk = false,
     verbose = false,
     progress = true,
-    disableCacheBust = false
+    disableCacheBust = false,
+	extractCss = true
   ) {
     const config: CliConfig = CliConfig.fromProject();
     const appConfig = config.config.apps[0];
@@ -47,7 +48,8 @@ export class NgCliWebpackConfig {
       sourcemap,
       vendorChunk,
       verbose,
-      progress
+      progress,
+	  extractCss
     );
     let targetConfigPartial = this.getTargetConfig(
       this.ngCliProject.root, appConfig, sourcemap, verbose, disableCacheBust

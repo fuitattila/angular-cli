@@ -21,6 +21,7 @@ export interface BuildOptions {
   locale?: string;
   deployUrl?: string;
   disableCacheBust?: boolean;
+  extractCss?: boolean | null;
 }
 
 const BuildCommand = Command.extend({
@@ -51,7 +52,8 @@ const BuildCommand = Command.extend({
     { name: 'locale',         type: String, default: null },
     { name: 'deploy-url',     type: String,  default: null, aliases: ['d'] },
     { name: 'disable-cache-bust', type: Boolean, default: false, aliases: ['dcb'],
-      description: 'Disable webpack\'s caching mechanism.' }
+      description: 'Disable webpack\'s caching mechanism.' },
+	{ name: 'extract-css',    type: Boolean, default: true }
   ],
 
   run: function (commandOptions: BuildOptions) {
@@ -63,6 +65,8 @@ const BuildCommand = Command.extend({
         commandOptions.environment = 'prod';
       }
     }
+
+    commandOptions.extractCss = commandOptions.extractCss || commandOptions.target === 'production';
 
     const project = this.project;
 

@@ -32,7 +32,8 @@ export default <any>Task.extend({
       runTaskOptions.vendorChunk,
       runTaskOptions.verbose,
       runTaskOptions.progress,
-      runTaskOptions.disableCacheBust
+      runTaskOptions.disableCacheBust,
+	  runTaskOptions.extractCss
     ).config;
 
     const webpackCompiler: any = webpack(config);

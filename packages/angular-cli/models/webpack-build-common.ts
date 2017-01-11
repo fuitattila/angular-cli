@@ -31,7 +31,8 @@ export function getWebpackCommonConfig(
   sourcemap: boolean,
   vendorChunk: boolean,
   verbose: boolean,
-  progress: boolean
+  progress: boolean,
+  extractCss: boolean,
 ) {
 
   const appRoot = path.resolve(projectRoot, appConfig.root);
@@ -51,23 +52,23 @@ export function getWebpackCommonConfig(
   }
 
   // process global scripts
-  if (appConfig.scripts.length > 0) {
-    const globalScrips = extraEntryParser(appConfig.scripts, appRoot, 'scripts');
+  if (appConfig.scripts && appConfig.scripts.length > 0) {
+    const globalScripts = extraEntryParser(appConfig.scripts, appRoot, 'scripts');
 
     // add entry points and lazy chunks
-    globalScrips.forEach(script => {
+    globalScripts.forEach(script => {
       if (script.lazy) { lazyChunks.push(script.entry); }
       entryPoints[script.entry] = (entryPoints[script.entry] || []).concat(script.path);
     });
 
     // load global scripts using script-loader
     extraRules.push({
-      include: globalScrips.map((script) => script.path), test: /\.js$/, loader: 'script-loader'
+      include: globalScripts.map((script) => script.path), test: /\.js$/, loader: 'script-loader'
     });
   }
 
   // process global styles
-  if (appConfig.styles.length === 0) {
+  if (!appConfig.styles || appConfig.styles.length === 0) {
     // create css loaders for component css
     extraRules.push(...makeCssLoaders());
   } else {
@@ -90,7 +91,7 @@ export function getWebpackCommonConfig(
     // create css loaders for component css and for global css
     extraRules.push(...makeCssLoaders(globalStyles.map((style) => style.path)));
 
-    if (extractedCssEntryPoints.length > 0) {
+    if (extractCss && extractedCssEntryPoints.length > 0) {
       // don't emit the .js entry point for extracted styles
       extraPlugins.push(new SuppressEntryChunksWebpackPlugin({ chunks: extractedCssEntryPoints }));
     }
@@ -104,10 +105,38 @@ export function getWebpackCommonConfig(
     }));
   }
 
+  // process environment file replacement
+  if (appConfig.environments) {
+    if (!('source' in appConfig.environments)) {
+      throw new SilentError(`Environment configuration does not contain "source" entry.`);
+    }
+    if (!(environment in appConfig.environments)) {
+      throw new SilentError(`Environment "${environment}" does not exist.`);
+    }
+
+    extraPlugins.push(new webpack.NormalModuleReplacementPlugin(
+      // This plugin is responsible for swapping the environment files.
+      // Since it takes a RegExp as first parameter, we need to escape the path.
+      // See https://webpack.github.io/docs/list-of-plugins.html#normalmodulereplacementplugin
+      new RegExp(path.resolve(appRoot, appConfig.environments['source'])
+        .replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&')),
+      path.resolve(appRoot, appConfig.environments[environment])
+    ));
+  }
+
+  // process asset entries
+  if (appConfig.assets) {
+    extraPlugins.push(new GlobCopyWebpackPlugin({
+      patterns: appConfig.assets,
+      globOptions: { cwd: appRoot, dot: true, ignore: '**/.gitkeep' }
+    }));
+  }
+
   if (progress) { extraPlugins.push(new ProgressPlugin({ profile: verbose, colors: true })); }
 
   return {
     devtool: sourcemap ? 'source-map' : false,
+    performance: { hints: false },
     resolve: {
       extensions: ['.ts', '.js'],
       modules: [nodeModules],
@@ -137,7 +166,8 @@ export function getWebpackCommonConfig(
         template: path.resolve(appRoot, appConfig.index),
         filename: path.resolve(appConfig.outDir, appConfig.index),
         chunksSortMode: packageChunkSort(['inline', 'styles', 'scripts', 'vendor', 'main']),
-        excludeChunks: lazyChunks
+        excludeChunks: lazyChunks,
+        xhtml: true
       }),
       new BaseHrefWebpackPlugin({
         baseHref: baseHref
