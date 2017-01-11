@@ -34,7 +34,6 @@ export default Task.extend({
       serveTaskOptions.verbose,
       serveTaskOptions.progress,
       undefined,
-      undefined,
       serveTaskOptions.extractCss
     ).config;
 
